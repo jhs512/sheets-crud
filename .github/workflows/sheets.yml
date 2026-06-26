@@ -1,0 +1,64 @@
+name: Sheets CRUD
+
+# push 시 자동으로 데모(추가→수정→삭제)를 실행한다.
+# 수동 실행 시에는 원하는 명령(command)을 골라서 돌릴 수 있다.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      command:
+        description: "실행할 명령"
+        type: choice
+        default: demo
+        options: [demo, list, append, update, delete]
+      id:
+        description: "노드 ID (update/delete/append용)"
+        required: false
+      title:
+        description: "제목 (append용)"
+        required: false
+      content:
+        description: "내용 (append/update용)"
+        required: false
+
+jobs:
+  crud:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - name: Run CRUD
+        env:
+          # 서비스 계정 JSON 전체를 Secret 으로 주입
+          GOOGLE_SA_KEY: ${{ secrets.GOOGLE_SA_KEY }}
+        run: |
+          CMD="${{ github.event.inputs.command || 'demo' }}"
+          case "$CMD" in
+            append)
+              python sheets_crud.py append \
+                --title "${{ github.event.inputs.title }}" \
+                --content "${{ github.event.inputs.content }}"
+              ;;
+            update)
+              python sheets_crud.py update \
+                --id "${{ github.event.inputs.id }}" \
+                --content "${{ github.event.inputs.content }}"
+              ;;
+            delete)
+              python sheets_crud.py delete --id "${{ github.event.inputs.id }}"
+              ;;
+            list)
+              python sheets_crud.py list
+              ;;
+            *)
+              python sheets_crud.py demo
+              ;;
+          esac
