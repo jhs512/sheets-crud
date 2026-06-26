@@ -65,9 +65,16 @@ def _data_rows(ws: gspread.Worksheet) -> list[list[str]]:
 
 
 def _find_row_by_node_id(ws: gspread.Worksheet, node_id: str) -> int | None:
-    """노드 ID(B열)로 행 번호(1-based)를 찾는다. 없으면 None."""
-    cell = ws.find(node_id, in_column=NODE_ID_COL)
-    return cell.row if cell else None
+    """노드 ID(B열)로 행 번호(1-based)를 찾는다. 없으면 None.
+
+    ws.find()는 append 직후 갱신된 값을 못 읽는 경우가 있어,
+    전체 값을 새로 읽어 직접 매칭한다(read-after-write 안전).
+    """
+    col = NODE_ID_COL - 1  # 0-based
+    for i, row in enumerate(ws.get_all_values(), start=1):
+        if len(row) > col and row[col].strip() == node_id:
+            return i
+    return None
 
 
 def _next_index(ws: gspread.Worksheet) -> int:
