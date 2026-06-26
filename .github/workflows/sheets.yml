@@ -13,13 +13,17 @@ on:
         default: demo
         options: [demo, list, append, update, delete]
       id:
-        description: "노드 ID (update/delete/append용)"
+        description: "노드 id (append/update/delete용, 예: fact-foo)"
         required: false
       title:
         description: "제목 (append용)"
         required: false
-      content:
-        description: "내용 (append/update용)"
+      type:
+        description: "노드 타입 (append용, 예: fact/hypothesis/...)"
+        required: false
+        default: note
+      summary:
+        description: "요약 (append/update용)"
         required: false
 
 jobs:
@@ -44,13 +48,15 @@ jobs:
           case "$CMD" in
             append)
               python sheets_crud.py append \
+                --id "${{ github.event.inputs.id }}" \
                 --title "${{ github.event.inputs.title }}" \
-                --content "${{ github.event.inputs.content }}"
+                --type "${{ github.event.inputs.type }}" \
+                --summary "${{ github.event.inputs.summary }}"
               ;;
             update)
               python sheets_crud.py update \
                 --id "${{ github.event.inputs.id }}" \
-                --content "${{ github.event.inputs.content }}"
+                --summary "${{ github.event.inputs.summary }}"
               ;;
             delete)
               python sheets_crud.py delete --id "${{ github.event.inputs.id }}"
